@@ -2,16 +2,6 @@
 
 pygraph-tool is a module to create and manipulate graphs. Nodes can be all objects who you want and edges are oriented and valued at 1 by default. If you wish one graph not oriented, edges must be declared in one direction and then in the other.
 
-## Installation
-
-### Package
-
-Via pip:
-
-```bash
-$ pip3 install pygraph-tool
-```
-
 ## Getting started
 
 ```python
