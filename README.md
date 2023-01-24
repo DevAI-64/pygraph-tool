@@ -38,35 +38,35 @@ def displayGraph(graph: Graph) -> None:
         print(message)
 
 # create a new graph
-graph: Graph = Graph
+graph: Graph = Graph()
 
 # create n1, n2 and n3, three nodes of graph
-graph.addNode("I'm n1", "n1")
-graph.addNode("I'm n2", "n2")
-graph.addNode("I'm n3", "n3")
+graph.add_node("I'm n1", "n1")
+graph.add_node("I'm n2", "n2")
+graph.add_node("I'm n3", "n3")
 
 """
 create edge e1 such as n1->n2 with weight = 1.5,
 edge e2 such as n3->n2 with weight by default = 1
 and edge e3 such as n1->n3 with weight by default = 1
 """
-graph.addEdge("n1", "n2", "e1", 1.5)
-graph.addEdge("n3", "n2", "e2")
-graph.addEdge("n1", "n3", "e3")
+graph.add_unidirectional_edge("n1", "n2", "e1", 1.5)
+graph.add_unidirectional_edge("n3", "n2", "e2")
+graph.add_unidirectional_edge("n1", "n3", "e3")
 
 # Display graph
 displayGraph(graph)
 print()
 
 # remove the node n2 and all edges binded to node n2
-graph.removeNode("n2")
+graph.remove_node("n2")
 
 # Display graph
 displayGraph(graph)
 print()
 
 # remove the edge e3
-graph.removeEdge("e3")
+graph.remove_edge("e3")
 
 # Display graph
 displayGraph(graph)
