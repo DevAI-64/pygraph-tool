@@ -1,11 +1,12 @@
 from typing import List, Any
 
-from .edge import Edge
-from .exceptions import NodeException, EdgeException, GraphException
 from .node import Node
+from .edge import Edge
+from .graph_exceptions import NodeException, EdgeException, GraphException
 
 
 class Graph:
+    """Defines the class that creates and manipulates the graph."""
 
     def __init__(self) -> None:
         """Build the graph instance."""
@@ -39,9 +40,7 @@ class Graph:
         Returns:
             bool: True if node belongs to the graph.
         """
-        return any(
-            node_id == node.node_id for node in self._nodes
-        )
+        return any(node_id == node.node_id for node in self._nodes)
 
     def is_edge(self, edge_id: str) -> bool:
         """Check if the edge belongs to the graph.
@@ -52,9 +51,7 @@ class Graph:
         Returns:
             bool: True if edge belongs to the graph.
         """
-        return any(
-            edge_id == edge.edge_id for edge in self._edges
-        )
+        return any(edge_id == edge.edge_id for edge in self._edges)
 
     def add_node(self, node_content: Any, node_id: str) -> None:
         """Add a node in the graph.
@@ -83,7 +80,7 @@ class Graph:
         node_id_start: str,
         node_id_end: str,
         edge_id: str,
-        weight: float = 1.
+        weight: float = 1.0,
     ) -> None:
         """Add an unidirecional edge in the graph.
 
@@ -113,21 +110,18 @@ class Graph:
                     self.get_node(node_id_start),
                     self.get_node(node_id_end),
                     edge_id,
-                    weight
+                    weight,
                 )
             )
         else:
             raise GraphException(f"The edge '{edge_id}' already exists.")
 
-    def add_bidirectional_edge(
-        self,
-        first_node: Node,
-        second_node: Node,
-        first_edge_id: str,
-        second_edge_id: str,
-        first_edge_weight: float = 1.,
-        second_edge_weight: float = 1.
-    ) -> None:
+    def add_bidirectional_edge(self) -> None:
+        """Add a bidirectional edge in the graph.
+
+        Raises:
+            NotImplementedError: coming soon...
+        """
         raise NotImplementedError("coming soon...")
 
     def get_node(self, node_id: str) -> Node:
@@ -144,7 +138,7 @@ class Graph:
         """
         if not self.is_node(node_id):
             raise GraphException(f"The node {node_id} doesn't exist in graph.")
-        
+
         return next(node for node in self._nodes if node.node_id == node_id)
 
     def get_edge(self, edge_id: str) -> Edge:
@@ -170,9 +164,7 @@ class Graph:
         Args:
             edge_id (str): Edge identifier.
         """
-        self._edges.remove(
-            self.get_edge(edge_id)
-        )
+        self._edges.remove(self.get_edge(edge_id))
 
     def remove_node(self, node_id: str) -> None:
         """Remove node found in graph.
@@ -183,8 +175,8 @@ class Graph:
         edges_to_remove: List[Edge] = [
             edge
             for edge in self._edges
-            if edge.node_start.node_id == node_id or
-            edge.node_end.node_id == node_id
+            if edge.node_start.node_id == node_id
+            or edge.node_end.node_id == node_id
         ]
         for edge in edges_to_remove:
             self._edges.remove(edge)

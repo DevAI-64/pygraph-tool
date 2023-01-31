@@ -2,12 +2,14 @@ from typing import Any
 
 
 class Node:
-    
-    def __init__(
-        self,
-        node_content: Any,
-        node_id: str
-    ) -> None:
+    """Defines the class that creates and manipulates the nodes of the graph.
+
+    Attributes:
+        node_content (Any): The object contained in node.
+        node_id (str): Node identifier.
+    """
+
+    def __init__(self, node_content: Any, node_id: str) -> None:
         """Build the node instance.
 
         Args:

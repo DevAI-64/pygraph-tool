@@ -2,14 +2,24 @@ from .node import Node
 
 
 class Edge:
+    """Defines the class that creates and manipulates the edges of the graph.
+
+    Attributes:
+        node_start (Node): Node which begins the edge.
+        node_end (Node): Node which terminates the edge.
+        edge_id (str): Edge identifier.
+        weight (float, optional): The edge's weight. Defaults to 1.
+        bidirectional (bool, optional): If the edge is undirected.
+            Defaults to False.
+    """
 
     def __init__(
         self,
         node_start: Node,
         node_end: Node,
         edge_id: str,
-        weight: float = 1.,
-        bidirectional: bool = False
+        weight: float = 1.0,
+        bidirectional: bool = False,
     ) -> None:
         """Build the edge instance.
 
@@ -18,7 +28,7 @@ class Edge:
             node_end (Node): Node which terminates the edge.
             edge_id (str): Edge identifier.
             weight (float, optional): The edge's weight. Defaults to 1.
-            bidirectional (bool, optional): If the edge is undirected. 
+            bidirectional (bool, optional): If the edge is undirected.
                 Defaults to False.
         """
         self._node_start: Node = node_start
@@ -44,7 +54,7 @@ class Edge:
     @node_end.setter
     def node_end(self, node_end: Node) -> None:
         self._node_end = node_end
-    
+
     @property
     def edge_id(self) -> str:
         """Edge identifier."""

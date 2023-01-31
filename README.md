@@ -7,11 +7,11 @@ pygraph-tool is a module to create and manipulate graphs. Nodes can be all objec
 ### Import modules
 Graph module:
 ```python
-from pygraph_tool.graph import Graph
+from pygraph_tool import Graph
 ```
 Exceptions module:
 ```python
-from pygraph_tool.exceptions import (
+from pygraph_tool import (
     NodeException,
     EdgeException,
     GraphException
@@ -19,8 +19,7 @@ from pygraph_tool.exceptions import (
 ```
 Others modules (optional):
 ```python
-from pygraph_tool.node import Node
-from pygraph_tool.edge import Edge
+from pygraph_tool import Node, Edge
 ```
 
 ### Create new graph
