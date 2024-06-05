@@ -1,3 +1,5 @@
+"""Graph exceptions module"""
+
 class EdgeException(Exception):
     """Class of exceptions for edge."""
 

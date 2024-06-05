@@ -1,0 +1,8 @@
+dist/
+pygraph_tool.egg-info/
+tests/__pycache__
+pygraph_tool/__pycache__
+__pycache__
+.pytest_cache
+.tox/
+.coverage

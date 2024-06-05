@@ -1,27 +1,68 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "pygraph-tool"
-version = "0.2.0"
-authors = [
-  { name="BEL AICH David", email="belaich.david@outlook.fr" },
-]
+version = "0.9.0"
 description = "pygraph-tool is a module to create and manipulate graphs."
+authors = ["BEL AICH David <belaich.david@outlook.fr>"]
+maintainers = [
+    "BEL AICH David <belaich.david@outlook.fr>"
+]
+license = "MIT"
 readme = "README.md"
-requires-python = ">=3.7"
+packages = [{include = "pygraph_tool"}]
+repository = "https://github.com/DevAI-64/pygraph-tool"
+keywords=[
+    "graph", "pygraph", "pygraph-tool",
+    "nodes", "edges", "node", "edge"
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: MIT License",
     "Topic :: Scientific/Engineering"
 ]
-keywords=[
-    "graph", "pygraph", "pygraph-tool",
-    "nodes", "edges", "node", "edge"
-]
-license = {text = "MIT"}
+include = ["LICENSE", "README.md", "CHANGELOG.md"]
 
-[project.urls]
-"Homepage" = "https://github.com/DevAI-64/pygraph-tool"
+
+[tool.black]
+line-length = 79
+
+
+[tool.pylint]
+max-args = 10
+
+
+[tool.poetry.dependencies]
+python = "^3.8.1"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "*"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+flake8 = "^7.0.0"
+pylint = "^3.2.2"
+tox = "^3.9.0"
+tox-poetry-installer = {extras = ["poetry"], version = "^0.10.3"}
+commitizen = "^3.27.0"
+coverage = "^7.5.3"
+
+
+[tool.coverage.report]
+include = ["pygraph_tool/*.py"]
+show_missing = true
+
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+version_provider = "poetry"
+update_changelog_on_bump = true
+major_version_zero = true
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

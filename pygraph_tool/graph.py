@@ -1,3 +1,5 @@
+"""Graph module"""
+
 from typing import List, Any
 
 from .node import Node
@@ -175,8 +177,7 @@ class Graph:
         edges_to_remove: List[Edge] = [
             edge
             for edge in self._edges
-            if edge.node_start.node_id == node_id
-            or edge.node_end.node_id == node_id
+            if node_id in (edge.node_start.node_id, edge.node_end.node_id)
         ]
         for edge in edges_to_remove:
             self._edges.remove(edge)

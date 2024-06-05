@@ -1,3 +1,5 @@
+"""Node module"""
+
 from typing import Any
 
 

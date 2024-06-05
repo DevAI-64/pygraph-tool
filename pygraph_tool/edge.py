@@ -1,3 +1,5 @@
+"""Edge module"""
+
 from .node import Node
 
 
