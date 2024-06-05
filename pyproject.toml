@@ -37,6 +37,7 @@ python = "^3.8.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
+coverage = "^7.5.3"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -46,7 +47,6 @@ pylint = "^3.2.2"
 tox = "^3.9.0"
 tox-poetry-installer = {extras = ["poetry"], version = "^0.10.3"}
 commitizen = "^3.27.0"
-coverage = "^7.5.3"
 
 
 [tool.coverage.report]
