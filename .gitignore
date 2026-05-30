@@ -1,8 +1,22 @@
-dist/
-pygraph_tool.egg-info/
-tests/__pycache__
-pygraph_tool/__pycache__
-__pycache__
-.pytest_cache
-.tox/
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
+htmlcov/
+
+# Builds
+build/
+dist/
+wheels/
+
+# Virtual environments
+.venv/
+.tox/
+
+# IDE
+.vscode/
+.idea/

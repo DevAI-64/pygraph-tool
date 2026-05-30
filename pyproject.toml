@@ -1,68 +1,116 @@
-[tool.poetry]
+[build-system]
+requires = ["uv_build>=0.11.17,<0.12"]
+build-backend = "uv_build"
+
+[project]
 name = "pygraph-tool"
-version = "0.9.0"
+version = "1.0.0"
 description = "pygraph-tool is a module to create and manipulate graphs."
-authors = ["BEL AICH David <belaich.david@outlook.fr>"]
-maintainers = [
-    "BEL AICH David <belaich.david@outlook.fr>"
-]
-license = "MIT"
 readme = "README.md"
-packages = [{include = "pygraph_tool"}]
-repository = "https://github.com/DevAI-64/pygraph-tool"
-keywords=[
-    "graph", "pygraph", "pygraph-tool",
-    "nodes", "edges", "node", "edge"
+requires-python = ">=3.14"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "BEL AICH David", email = "belaich.david@outlook.fr" },
+]
+maintainers = [
+    { name = "BEL AICH David", email = "belaich.david@outlook.fr" },
+]
+keywords = [
+    "graph",
+    "pygraph",
+    "pygraph-tool",
+    "nodes",
+    "edges",
+    "node",
+    "edge",
 ]
 classifiers = [
-    "Programming Language :: Python :: 3",
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: MIT License",
-    "Topic :: Scientific/Engineering"
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-include = ["LICENSE", "README.md", "CHANGELOG.md"]
+dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/DevAI-64/pygraph-tool"
+Repository = "https://github.com/DevAI-64/pygraph-tool"
+Issues = "https://github.com/DevAI-64/pygraph-tool/issues"
+Changelog = "https://github.com/DevAI-64/pygraph-tool/blob/main/CHANGELOG.md"
 
-[tool.black]
-line-length = 79
+[dependency-groups]
+dev = [
+    "coverage>=7.14.1",
+    "mypy>=2.1.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.15",
+]
 
+[tool.uv.build-backend]
+module-name = "pygraph_tool"
+module-root = ""
 
-[tool.pylint]
-max-args = 10
+[tool.ruff]
+line-length = 88
+target-version = "py314"
 
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "UP",
+    "D",
+]
+ignore = [
+    "D100",
+    "D104",
+    "D107",
+]
 
-[tool.poetry.dependencies]
-python = "^3.8.1"
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D"]
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
-[tool.poetry.group.test.dependencies]
-pytest = "*"
-coverage = "^7.5.3"
+[tool.ruff.format]
+docstring-code-format = true
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "-ra",
+    "--strict-config",
+    "--strict-markers",
+]
 
-[tool.poetry.group.dev.dependencies]
-black = "^24.4.2"
-flake8 = "^7.0.0"
-pylint = "^3.2.2"
-tox = "^3.9.0"
-tox-poetry-installer = {extras = ["poetry"], version = "^0.10.3"}
-commitizen = "^3.27.0"
-
+[tool.coverage.run]
+source = ["pygraph_tool"]
+branch = true
 
 [tool.coverage.report]
-include = ["pygraph_tool/*.py"]
 show_missing = true
+fail_under = 90
 
+[tool.mypy]
+python_version = "3.14"
+disallow_untyped_defs = true
+warn_return_any = true
+warn_unused_configs = true
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-tag_format = "$version"
-version_scheme = "pep440"
-version_provider = "poetry"
+version = "1.0.0"
+tag_format = "v$version"
+version_files = [
+    "pyproject.toml:version",
+]
+changelog_file = "CHANGELOG.md"
 update_changelog_on_bump = true
-major_version_zero = true
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+major_version_zero = false

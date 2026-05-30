@@ -1,12 +1,17 @@
-"""Graph exceptions module"""
-
-class EdgeException(Exception):
-    """Class of exceptions for edge."""
+"""Graph exceptions module."""
 
 
-class GraphException(Exception):
-    """Class of exceptions for graph."""
+class PyGraphToolException(Exception):
+    """Base exception for pygraph-tool."""
 
 
-class NodeException(Exception):
-    """Class of exceptions for node."""
+class NodeException(PyGraphToolException):
+    """Exception raised for node-related errors."""
+
+
+class EdgeException(PyGraphToolException):
+    """Exception raised for edge-related errors."""
+
+
+class GraphException(PyGraphToolException):
+    """Exception raised for graph-related errors."""
