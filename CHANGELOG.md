@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-05-31
+
+### Added
+
+- Added adjacency indexes to improve outgoing, incoming, and incident edge lookups.
+- Added `Graph.get_neighbors()` to retrieve neighboring nodes by direction.
+- Added `Graph.get_reachable_nodes()` for breadth-first traversal up to a maximum depth.
+- Added `Graph.get_shortest_path()` for unweighted shortest path search.
+- Added `Graph.extract_subgraph()` to create a graph from a selected set of nodes.
+- Added `Metadata.copy()` to safely duplicate metadata collections.
+
+### Changed
+
+- Updated graph edge lookup internals to rely on adjacency indexes.
+- Improved traversal performance for graph navigation methods.
+- Preserved existing public API behavior while improving internal storage.
+
+### Fixed
+
+- Ensured adjacency indexes remain consistent when removing edges.
+- Ensured adjacency indexes remain consistent when removing nodes and their connected edges.
+- Ensured subgraph extraction copies metadata instead of sharing metadata instances.
+
+### Tests
+
+- Added traversal tests for neighbors, reachable nodes, and shortest paths.
+- Added subgraph extraction tests.
+- Added metadata copy tests.
+- Improved coverage around edge and node removal with adjacency indexes.
+
 ## [1.0.0] - 2026-05-30
 
 ### Added

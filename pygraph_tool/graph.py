@@ -1,11 +1,17 @@
 """Graph module."""
 
+from __future__ import annotations
+
+from collections import deque
 from collections.abc import Callable, Iterable
+from typing import Literal
 
 from .edge import Edge
 from .graph_exceptions import GraphException
 from .metadata import Metadata
 from .node import Node
+
+Direction = Literal["outgoing", "incoming", "both"]
 
 
 class Graph[NodeValueT, EdgeValueT]:
@@ -19,6 +25,8 @@ class Graph[NodeValueT, EdgeValueT]:
         """Initialize an empty graph."""
         self._nodes_by_id: dict[str, Node[NodeValueT]] = {}
         self._edges_by_id: dict[str, Edge[NodeValueT, EdgeValueT]] = {}
+        self._outgoing_edge_ids_by_node_id: dict[str, dict[str, None]] = {}
+        self._incoming_edge_ids_by_node_id: dict[str, dict[str, None]] = {}
 
     @property
     def nodes(self) -> tuple[Node[NodeValueT], ...]:
@@ -88,6 +96,8 @@ class Graph[NodeValueT, EdgeValueT]:
             raise GraphException(f"The node '{node.node_id}' already exists.")
 
         self._nodes_by_id[node.node_id] = node
+        self._outgoing_edge_ids_by_node_id[node.node_id] = {}
+        self._incoming_edge_ids_by_node_id[node.node_id] = {}
         return node
 
     def add_edge(
@@ -140,6 +150,7 @@ class Graph[NodeValueT, EdgeValueT]:
             raise GraphException(f"The edge '{edge.edge_id}' already exists.")
 
         self._edges_by_id[edge.edge_id] = edge
+        self._register_edge_in_adjacency_indexes(edge)
         return edge
 
     def add_unidirectional_edge(
@@ -259,6 +270,7 @@ class Graph[NodeValueT, EdgeValueT]:
             The removed edge.
         """
         edge = self.get_edge(edge_id)
+        self._unregister_edge_from_adjacency_indexes(edge)
         del self._edges_by_id[edge_id]
         return edge
 
@@ -276,16 +288,15 @@ class Graph[NodeValueT, EdgeValueT]:
         """
         node = self.get_node(node_id)
 
-        edge_ids_to_remove = [
-            edge.edge_id
-            for edge in self._edges_by_id.values()
-            if node_id in (edge.node_start.node_id, edge.node_end.node_id)
-        ]
+        edge_ids_to_remove = [edge.edge_id for edge in self.get_incident_edges(node_id)]
 
         for edge_id in edge_ids_to_remove:
-            del self._edges_by_id[edge_id]
+            self.remove_edge(edge_id)
 
+        del self._outgoing_edge_ids_by_node_id[node_id]
+        del self._incoming_edge_ids_by_node_id[node_id]
         del self._nodes_by_id[node_id]
+
         return node
 
     def get_outgoing_edges(
@@ -296,8 +307,6 @@ class Graph[NodeValueT, EdgeValueT]:
 
         For bidirectional edges, an edge connected to the node is considered
         outgoing even when the node is the edge end.
-
-        Duplicate edges are removed from the result.
 
         Args:
             node_id: Node identifier.
@@ -310,15 +319,10 @@ class Graph[NodeValueT, EdgeValueT]:
         """
         self.get_node(node_id)
 
-        outgoing_edges_by_id: dict[str, Edge[NodeValueT, EdgeValueT]] = {}
-
-        for edge in self._edges_by_id.values():
-            if edge.node_start.node_id == node_id:
-                outgoing_edges_by_id[edge.edge_id] = edge
-            elif edge.bidirectional and edge.node_end.node_id == node_id:
-                outgoing_edges_by_id[edge.edge_id] = edge
-
-        return list(outgoing_edges_by_id.values())
+        return [
+            self._edges_by_id[edge_id]
+            for edge_id in self._outgoing_edge_ids_by_node_id[node_id]
+        ]
 
     def get_incoming_edges(
         self,
@@ -328,8 +332,6 @@ class Graph[NodeValueT, EdgeValueT]:
 
         For bidirectional edges, an edge connected to the node is considered
         incoming even when the node is the edge start.
-
-        Duplicate edges are removed from the result.
 
         Args:
             node_id: Node identifier.
@@ -342,15 +344,10 @@ class Graph[NodeValueT, EdgeValueT]:
         """
         self.get_node(node_id)
 
-        incoming_edges_by_id: dict[str, Edge[NodeValueT, EdgeValueT]] = {}
-
-        for edge in self._edges_by_id.values():
-            if edge.node_end.node_id == node_id:
-                incoming_edges_by_id[edge.edge_id] = edge
-            elif edge.bidirectional and edge.node_start.node_id == node_id:
-                incoming_edges_by_id[edge.edge_id] = edge
-
-        return list(incoming_edges_by_id.values())
+        return [
+            self._edges_by_id[edge_id]
+            for edge_id in self._incoming_edge_ids_by_node_id[node_id]
+        ]
 
     def get_incident_edges(
         self,
@@ -358,10 +355,8 @@ class Graph[NodeValueT, EdgeValueT]:
     ) -> list[Edge[NodeValueT, EdgeValueT]]:
         """Return all edges connected to a node.
 
-        Incident edges include both incoming and outgoing edges. Direction is not
-        considered by this method.
-
-        Duplicate edges are removed from the result.
+        Incident edges include both incoming and outgoing edges.
+        Direction is not considered by this method.
 
         Args:
             node_id: Node identifier.
@@ -374,13 +369,12 @@ class Graph[NodeValueT, EdgeValueT]:
         """
         self.get_node(node_id)
 
-        incident_edges_by_id: dict[str, Edge[NodeValueT, EdgeValueT]] = {}
+        edge_ids = {
+            **self._outgoing_edge_ids_by_node_id[node_id],
+            **self._incoming_edge_ids_by_node_id[node_id],
+        }
 
-        for edge in self._edges_by_id.values():
-            if node_id in (edge.node_start.node_id, edge.node_end.node_id):
-                incident_edges_by_id[edge.edge_id] = edge
-
-        return list(incident_edges_by_id.values())
+        return [self._edges_by_id[edge_id] for edge_id in edge_ids]
 
     def get_predecessors(self, node_id: str) -> list[Node[NodeValueT]]:
         """Return predecessor nodes for a node.
@@ -435,6 +429,180 @@ class Graph[NodeValueT, EdgeValueT]:
                 successors_by_id[edge.node_start.node_id] = edge.node_start
 
         return list(successors_by_id.values())
+
+    def get_neighbors(
+        self,
+        node_id: str,
+        *,
+        direction: Direction = "both",
+    ) -> list[Node[NodeValueT]]:
+        """Return neighbor nodes for a node.
+
+        Args:
+            node_id: Node identifier.
+            direction: Neighbor direction to follow. Supported values are
+                "outgoing", "incoming", and "both".
+
+        Raises:
+            GraphException: If the node does not exist.
+            GraphException: If the direction is invalid.
+
+        Returns:
+            List of neighbor nodes.
+        """
+        if direction == "outgoing":
+            return self.get_successors(node_id)
+
+        if direction == "incoming":
+            return self.get_predecessors(node_id)
+
+        if direction == "both":
+            neighbors_by_id: dict[str, Node[NodeValueT]] = {}
+
+            for node in self.get_successors(node_id):
+                neighbors_by_id[node.node_id] = node
+
+            for node in self.get_predecessors(node_id):
+                neighbors_by_id[node.node_id] = node
+
+            return list(neighbors_by_id.values())
+
+        raise GraphException(
+            "Invalid direction. Expected 'outgoing', 'incoming', or 'both'."
+        )
+
+    def get_reachable_nodes(
+        self,
+        node_id: str,
+        *,
+        max_depth: int = 1,
+        direction: Direction = "outgoing",
+        include_start: bool = False,
+    ) -> list[Node[NodeValueT]]:
+        """Return nodes reachable from a start node up to a maximum depth.
+
+        The traversal is breadth-first and unweighted.
+
+        Args:
+            node_id: Start node identifier.
+            max_depth: Maximum traversal depth. Zero returns only the start node
+                when include_start is True.
+            direction: Edge direction to follow.
+            include_start: Whether to include the start node in the result.
+
+        Raises:
+            GraphException: If the start node does not exist.
+            GraphException: If max_depth is negative.
+
+        Returns:
+            List of reachable nodes.
+        """
+        if max_depth < 0:
+            raise GraphException("max_depth must be greater than or equal to 0.")
+
+        start_node = self.get_node(node_id)
+
+        visited_node_ids = {node_id}
+        reachable_nodes: list[Node[NodeValueT]] = []
+
+        if include_start:
+            reachable_nodes.append(start_node)
+
+        queue: deque[tuple[str, int]] = deque([(node_id, 0)])
+
+        while queue:
+            current_node_id, current_depth = queue.popleft()
+
+            if current_depth >= max_depth:
+                continue
+
+            for neighbor in self.get_neighbors(
+                current_node_id,
+                direction=direction,
+            ):
+                if neighbor.node_id in visited_node_ids:
+                    continue
+
+                visited_node_ids.add(neighbor.node_id)
+                reachable_nodes.append(neighbor)
+                queue.append((neighbor.node_id, current_depth + 1))
+
+        return reachable_nodes
+
+    def get_shortest_path(
+        self,
+        node_id_start: str,
+        node_id_end: str,
+        *,
+        direction: Direction = "outgoing",
+    ) -> list[Node[NodeValueT]] | None:
+        """Return an unweighted shortest path between two nodes.
+
+        The traversal is breadth-first and ignores edge weights.
+
+        Args:
+            node_id_start: Start node identifier.
+            node_id_end: End node identifier.
+            direction: Edge direction to follow.
+
+        Raises:
+            GraphException: If one of the nodes does not exist.
+
+        Returns:
+            The shortest path as a list of nodes, or None when no path exists.
+        """
+        self.get_node(node_id_start)
+        self.get_node(node_id_end)
+
+        if node_id_start == node_id_end:
+            return [self.get_node(node_id_start)]
+
+        visited_node_ids = {node_id_start}
+        previous_node_id_by_node_id: dict[str, str | None] = {
+            node_id_start: None,
+        }
+
+        queue: deque[str] = deque([node_id_start])
+
+        while queue:
+            current_node_id = queue.popleft()
+
+            for neighbor in self.get_neighbors(
+                current_node_id,
+                direction=direction,
+            ):
+                if neighbor.node_id in visited_node_ids:
+                    continue
+
+                visited_node_ids.add(neighbor.node_id)
+                previous_node_id_by_node_id[neighbor.node_id] = current_node_id
+
+                if neighbor.node_id == node_id_end:
+                    return self._build_node_path(
+                        previous_node_id_by_node_id,
+                        node_id_end,
+                    )
+
+                queue.append(neighbor.node_id)
+
+        return None
+
+    def _build_node_path(
+        self,
+        previous_node_id_by_node_id: dict[str, str | None],
+        node_id_end: str,
+    ) -> list[Node[NodeValueT]]:
+        """Build a node path from a previous-node mapping."""
+        path_node_ids: list[str] = []
+        current_node_id: str | None = node_id_end
+
+        while current_node_id is not None:
+            path_node_ids.append(current_node_id)
+            current_node_id = previous_node_id_by_node_id[current_node_id]
+
+        path_node_ids.reverse()
+
+        return [self.get_node(node_id) for node_id in path_node_ids]
 
     def filter_nodes(
         self,
@@ -594,3 +762,87 @@ class Graph[NodeValueT, EdgeValueT]:
             return expected_values_set.issubset(existing_values)
 
         return bool(existing_values.intersection(expected_values_set))
+
+    def _register_edge_in_adjacency_indexes(
+        self,
+        edge: Edge[NodeValueT, EdgeValueT],
+    ) -> None:
+        """Register an edge in adjacency indexes."""
+        start_id = edge.node_start.node_id
+        end_id = edge.node_end.node_id
+
+        self._outgoing_edge_ids_by_node_id[start_id][edge.edge_id] = None
+        self._incoming_edge_ids_by_node_id[end_id][edge.edge_id] = None
+
+        if edge.bidirectional:
+            self._outgoing_edge_ids_by_node_id[end_id][edge.edge_id] = None
+            self._incoming_edge_ids_by_node_id[start_id][edge.edge_id] = None
+
+    def _unregister_edge_from_adjacency_indexes(
+        self,
+        edge: Edge[NodeValueT, EdgeValueT],
+    ) -> None:
+        """Unregister an edge from adjacency indexes."""
+        start_id = edge.node_start.node_id
+        end_id = edge.node_end.node_id
+
+        self._outgoing_edge_ids_by_node_id[start_id].pop(edge.edge_id, None)
+        self._incoming_edge_ids_by_node_id[end_id].pop(edge.edge_id, None)
+
+        if edge.bidirectional:
+            self._outgoing_edge_ids_by_node_id[end_id].pop(edge.edge_id, None)
+            self._incoming_edge_ids_by_node_id[start_id].pop(edge.edge_id, None)
+
+    def extract_subgraph(
+        self,
+        node_ids: Iterable[str],
+        *,
+        include_edges: bool = True,
+    ) -> Graph[NodeValueT, EdgeValueT]:
+        """Extract a subgraph containing selected nodes.
+
+        Node and edge values are reused by reference. Metadata objects are copied.
+
+        Args:
+            node_ids: Node identifiers to include in the subgraph.
+            include_edges: Whether to include edges whose two endpoints are part
+                of the selected nodes.
+
+        Raises:
+            GraphException: If one of the node identifiers does not exist.
+
+        Returns:
+            A new graph containing the selected nodes and optional internal edges.
+        """
+        selected_node_ids = tuple(dict.fromkeys(node_ids))
+        selected_node_id_set = set(selected_node_ids)
+
+        subgraph: Graph[NodeValueT, EdgeValueT] = Graph()
+
+        for node_id in selected_node_ids:
+            node = self.get_node(node_id)
+            subgraph.add_node(
+                value=node.value,
+                node_id=node.node_id,
+                metadata=node.metadata.copy(),
+            )
+
+        if not include_edges:
+            return subgraph
+
+        for edge in self.edges:
+            start_id = edge.node_start.node_id
+            end_id = edge.node_end.node_id
+
+            if start_id in selected_node_id_set and end_id in selected_node_id_set:
+                subgraph.add_edge(
+                    node_id_start=start_id,
+                    node_id_end=end_id,
+                    value=edge.value,
+                    edge_id=edge.edge_id,
+                    weight=edge.weight,
+                    bidirectional=edge.bidirectional,
+                    metadata=edge.metadata.copy(),
+                )
+
+        return subgraph

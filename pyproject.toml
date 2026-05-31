@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "pygraph-tool"
-version = "1.0.0"
+version = "1.1.0"
 description = "pygraph-tool is a module to create and manipulate graphs."
 readme = "README.md"
 requires-python = ">=3.14"
@@ -44,6 +44,7 @@ Changelog = "https://github.com/DevAI-64/pygraph-tool/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
+    "commitizen>=4.16.3",
     "coverage>=7.14.1",
     "mypy>=2.1.0",
     "pytest>=9.0.3",
@@ -106,7 +107,7 @@ warn_unused_configs = true
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.0.0"
+version = "1.1.0"
 tag_format = "v$version"
 version_files = [
     "pyproject.toml:version",
