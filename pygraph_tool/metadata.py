@@ -1,5 +1,7 @@
 """Metadata module."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 
@@ -67,3 +69,17 @@ class Metadata:
             True if the flag exists, False otherwise.
         """
         return flag in self.flags
+
+    def copy(self) -> Metadata:
+        """Return a shallow copy of the metadata.
+
+        Returns:
+            A new metadata instance with copied collections.
+        """
+        return Metadata(
+            tags=set(self.tags),
+            categories=set(self.categories),
+            layers=set(self.layers),
+            flags=set(self.flags),
+            properties=dict(self.properties),
+        )
