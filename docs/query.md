@@ -271,16 +271,11 @@ nodes_only_subgraph = (
 )
 ```
 
-## Public helper classes
+## No imports required
 
-The following classes are exported mainly for type hints and advanced usage:
+The fluent query helpers are always reached through `graph.query()`. The objects
+they return are internal implementation details: you never import or construct
+them yourself.
 
-```python
-from pygraph_tool import EdgeQuery, GraphQuery, NodeQuery, NodeTraversalQuery
-```
-
-Most users should start with:
-
-```python
-graph.query()
-```
+The only classes you import from `pygraph_tool` are `Graph`, `Node`, `Edge`,
+`Metadata`, and the exception types.

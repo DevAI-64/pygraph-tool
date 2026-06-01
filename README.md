@@ -22,7 +22,7 @@ It is useful when you want to:
 - write readable chained queries,
 - prototype graph-based systems without adding a heavy dependency.
 
-`pygraph-tool` is not a graph database. It does not provide persistence, transactions, clustering, query optimization or server features. It focuses on local, in-memory graph manipulation with Python objects.
+`pygraph-tool` is not a graph database. It does not provide database-style persistence, transactions, clustering, query optimization or server features. It focuses on local, in-memory graph manipulation with lightweight dictionary and JSON import/export helpers.
 
 ## Installation
 
@@ -130,6 +130,10 @@ transitions = (
 - Chainable local query interface
 - Generic filtering with predicates
 - Metadata-based filtering
+- Conversion to and from standard Python dictionaries
+- JSON serialization and deserialization
+- JSON file import and export
+- Optional value hooks for non-JSON values
 - Dedicated exceptions for graph, node and edge errors
 - Type information through `py.typed`
 
@@ -156,28 +160,34 @@ More detailed documentation is available in the `docs/` directory:
 
 - [Usage guide](https://github.com/DevAI-64/pygraph-tool/blob/main/docs/usage.md)
 - [Chained queries](https://github.com/DevAI-64/pygraph-tool/blob/main/docs/query.md)
+- [Serialization guide](https://github.com/DevAI-64/pygraph-tool/blob/main/docs/serialization.md)
 - [Development guide](https://github.com/DevAI-64/pygraph-tool/blob/main/docs/development.md)
 - [Release guide](https://github.com/DevAI-64/pygraph-tool/blob/main/docs/release.md)
 
 ## Public classes
 
-Main classes:
+`pygraph-tool` intentionally exposes only a few classes. You only ever import
+these:
 
 ```python
 from pygraph_tool import Edge, Graph, Metadata, Node
 ```
 
-Query helper classes, mainly useful for type hints and advanced usage:
+And the exceptions:
 
 ```python
-from pygraph_tool import EdgeQuery, GraphQuery, NodeQuery, NodeTraversalQuery
+from pygraph_tool import (
+    PyGraphToolException,
+    GraphException,
+    NodeException,
+    EdgeException,
+    SerializationException,
+)
 ```
 
-Exceptions:
-
-```python
-from pygraph_tool import EdgeException, GraphException, NodeException
-```
+Everything else is internal. The fluent query helpers are reached through
+`graph.query()` and return internal objects that you never import or construct
+yourself, so there is very little to learn.
 
 ## Common methods
 
@@ -239,6 +249,17 @@ graph.query().edges()
 graph.query().from_node(...)
 ```
 
+Import and export graphs:
+
+```python
+graph.to_dict()
+graph.to_json(...)
+graph.save_json(...)
+Graph.from_dict(...)
+Graph.from_json(...)
+Graph.load_json(...)
+```
+
 ## Development
 
 Install development dependencies:
@@ -281,13 +302,11 @@ Given a version number `MAJOR.MINOR.PATCH`:
 
 Potential future improvements:
 
-- JSON serialization
 - Optional local storage helpers
 - Public indexing system
 - Weighted shortest path search
 - Mermaid export
 - Graph visualization helpers
-- Import and export helpers
 - Additional graph traversal utilities
 
 ## License

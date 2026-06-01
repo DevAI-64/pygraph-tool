@@ -2,29 +2,38 @@ name: CI
 
 on:
   push:
+    branches: ["main", "feat/**", "fix/**", "chore/**"]
   pull_request:
+    branches: ["main"]
 
 jobs:
-  quality:
+  tests:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Install uv and set Python version
+        uses: astral-sh/setup-uv@v8.1.0
         with:
-          python-version-file: ".python-version"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-        with:
-          version: "0.11.17"
+          python-version: ${{ matrix.python-version }}
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --locked --dev
+        run: uv sync --locked --all-extras --dev
+
+      - name: Show Python version
+        run: uv run python --version
+
+      - name: Compile Python files
+        run: uv run python -m compileall -q pygraph_tool tests
 
       - name: Check formatting
         run: uv run ruff format --check .
@@ -35,11 +44,34 @@ jobs:
       - name: Type check
         run: uv run mypy pygraph_tool
 
-      - name: Test
-        run: uv run coverage run -m pytest
+      - name: Run tests with coverage
+        run: |
+          uv run coverage run --branch -m pytest
+          uv run coverage report -m
 
-      - name: Coverage report
-        run: uv run coverage report
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev
 
       - name: Build package
         run: uv build --no-sources
+
+      - name: Smoke test wheel
+        run: uv run --isolated --no-project --with dist/*.whl python -c "from pygraph_tool import Graph; g = Graph(); g.add_node('hello', node_id='n1'); print(g.get_node('n1').value)"
+
+      - name: Smoke test sdist
+        run: uv run --isolated --no-project --with dist/*.tar.gz python -c "from pygraph_tool import Graph; g = Graph(); g.add_node('hello', node_id='n1'); print(g.get_node('n1').value)"

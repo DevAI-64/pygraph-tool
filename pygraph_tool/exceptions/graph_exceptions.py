@@ -1,4 +1,4 @@
-"""Graph exceptions module."""
+"""Exception hierarchy for pygraph-tool."""
 
 
 class PyGraphToolException(Exception):
@@ -15,3 +15,7 @@ class EdgeException(PyGraphToolException):
 
 class GraphException(PyGraphToolException):
     """Exception raised for graph-related errors."""
+
+
+class SerializationException(PyGraphToolException):
+    """Exception raised for serialization and deserialization errors."""

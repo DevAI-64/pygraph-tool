@@ -6,27 +6,27 @@ This guide shows the main features of `pygraph-tool`.
 
 ## Import modules
 
-```python
-from pygraph_tool import Graph
-```
-
-You can also import the main public classes:
+`pygraph-tool` exposes only a few classes. You only import these:
 
 ```python
-from pygraph_tool import Edge, Metadata, Node
-```
-
-Query helper classes are exported mainly for type hints and advanced usage:
-
-```python
-from pygraph_tool import EdgeQuery, GraphQuery, NodeQuery, NodeTraversalQuery
+from pygraph_tool import Edge, Graph, Metadata, Node
 ```
 
 And the exceptions:
 
 ```python
-from pygraph_tool import EdgeException, GraphException, NodeException
+from pygraph_tool import (
+    PyGraphToolException,
+    GraphException,
+    NodeException,
+    EdgeException,
+    SerializationException,
+)
 ```
+
+The fluent query helpers are used through `graph.query()` (see the
+[chained queries guide](query.md)). They return internal objects that you never
+import or construct yourself, which keeps the library simple.
 
 ## Create a graph
 
@@ -717,6 +717,29 @@ nodes_only_subgraph = (
 )
 ```
 
+## Serialize and import/export graphs
+
+A graph can be converted to a standard Python dictionary, to JSON, or to a JSON
+file, and rebuilt from any of these.
+
+```python
+data = graph.to_dict()
+restored = Graph.from_dict(data)
+
+text = graph.to_json(indent=2)
+restored = Graph.from_json(text)
+
+graph.save_json("graph.json")
+restored = Graph.load_json("graph.json")
+```
+
+Identifiers, values, weights, directions, and metadata are preserved across a
+round trip. Values that are not JSON-compatible can be handled with optional
+conversion hooks.
+
+See the [serialization guide](serialization.md) for the format, the hooks, and
+the error handling details.
+
 ## Remove edges
 
 ```python
@@ -855,7 +878,12 @@ state_graph = (
 `pygraph-tool` exposes dedicated exceptions:
 
 ```python
-from pygraph_tool import EdgeException, GraphException, NodeException
+from pygraph_tool import (
+    EdgeException,
+    GraphException,
+    NodeException,
+    SerializationException,
+)
 ```
 
 Typical cases:
@@ -863,6 +891,7 @@ Typical cases:
 * `NodeException`: invalid node creation
 * `EdgeException`: invalid edge creation
 * `GraphException`: invalid graph operation, such as duplicate identifiers or missing nodes/edges
+* `SerializationException`: invalid or inconsistent serialized data
 
 Example:
 

@@ -4,10 +4,10 @@ build-backend = "uv_build"
 
 [project]
 name = "pygraph-tool"
-version = "1.2.0"
+version = "2.0.0"
 description = "A lightweight Python library to create and manipulate object-oriented graphs."
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
@@ -26,10 +26,12 @@ keywords = [
     "edge",
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -57,7 +59,7 @@ module-root = ""
 
 [tool.ruff]
 line-length = 88
-target-version = "py314"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = [
@@ -100,14 +102,14 @@ show_missing = true
 fail_under = 90
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.12"
 disallow_untyped_defs = true
 warn_return_any = true
 warn_unused_configs = true
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.2.0"
+version = "2.0.0"
 tag_format = "v$version"
 version_files = [
     "pyproject.toml:version",
