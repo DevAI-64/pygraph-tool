@@ -4,8 +4,8 @@ build-backend = "uv_build"
 
 [project]
 name = "pygraph-tool"
-version = "1.1.0"
-description = "pygraph-tool is a module to create and manipulate graphs."
+version = "1.2.0"
+description = "A lightweight Python library to create and manipulate object-oriented graphs."
 readme = "README.md"
 requires-python = ">=3.14"
 license = "MIT"
@@ -107,7 +107,7 @@ warn_unused_configs = true
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.1.0"
+version = "1.2.0"
 tag_format = "v$version"
 version_files = [
     "pyproject.toml:version",
