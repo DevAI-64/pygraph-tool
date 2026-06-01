@@ -372,3 +372,15 @@ def test_node_compares_by_identifier() -> None:
     assert first == second
     assert first != third
     assert len({first, second, third}) == 2
+
+
+def test_get_opposite_node_raises_when_node_is_not_connected_to_edge() -> None:
+    graph: Graph[str, str] = Graph()
+
+    graph.add_node("A", node_id="a")
+    graph.add_node("B", node_id="b")
+
+    edge = graph.add_unidirectional_edge("a", "b", edge_id="ab")
+
+    with pytest.raises(GraphException):
+        graph._get_opposite_node(edge, "missing")

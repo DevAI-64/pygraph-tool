@@ -4,14 +4,17 @@ from __future__ import annotations
 
 from collections import deque
 from collections.abc import Callable, Iterable
-from typing import Literal
+from typing import TYPE_CHECKING
 
+from ._metadata_matching import matches_metadata
+from ._types import Direction
 from .edge import Edge
 from .graph_exceptions import GraphException
 from .metadata import Metadata
 from .node import Node
 
-Direction = Literal["outgoing", "incoming", "both"]
+if TYPE_CHECKING:
+    from .query import GraphQuery
 
 
 class Graph[NodeValueT, EdgeValueT]:
@@ -45,6 +48,16 @@ class Graph[NodeValueT, EdgeValueT]:
             Tuple containing the graph edges.
         """
         return tuple(self._edges_by_id.values())
+
+    def query(self) -> GraphQuery[NodeValueT, EdgeValueT]:
+        """Create a fluent query for the graph.
+
+        Returns:
+            A fluent query entry point bound to this graph.
+        """
+        from .query import GraphQuery
+
+        return GraphQuery(self)
 
     def is_node(self, node_id: str) -> bool:
         """Return whether a node belongs to the graph.
@@ -396,10 +409,8 @@ class Graph[NodeValueT, EdgeValueT]:
         predecessors_by_id: dict[str, Node[NodeValueT]] = {}
 
         for edge in self.get_incoming_edges(node_id):
-            if edge.node_end.node_id == node_id:
-                predecessors_by_id[edge.node_start.node_id] = edge.node_start
-            elif edge.bidirectional and edge.node_start.node_id == node_id:
-                predecessors_by_id[edge.node_end.node_id] = edge.node_end
+            predecessor = self._get_opposite_node(edge, node_id)
+            predecessors_by_id[predecessor.node_id] = predecessor
 
         return list(predecessors_by_id.values())
 
@@ -423,10 +434,8 @@ class Graph[NodeValueT, EdgeValueT]:
         successors_by_id: dict[str, Node[NodeValueT]] = {}
 
         for edge in self.get_outgoing_edges(node_id):
-            if edge.node_start.node_id == node_id:
-                successors_by_id[edge.node_end.node_id] = edge.node_end
-            elif edge.bidirectional and edge.node_end.node_id == node_id:
-                successors_by_id[edge.node_start.node_id] = edge.node_start
+            successor = self._get_opposite_node(edge, node_id)
+            successors_by_id[successor.node_id] = successor
 
         return list(successors_by_id.values())
 
@@ -656,7 +665,7 @@ class Graph[NodeValueT, EdgeValueT]:
             List of nodes matching the metadata criteria.
         """
         return self.filter_nodes(
-            lambda node: self._matches_metadata(
+            lambda node: matches_metadata(
                 metadata=node.metadata,
                 tags=tags,
                 categories=categories,
@@ -690,7 +699,7 @@ class Graph[NodeValueT, EdgeValueT]:
             List of edges matching the metadata criteria.
         """
         return self.filter_edges(
-            lambda edge: self._matches_metadata(
+            lambda edge: matches_metadata(
                 metadata=edge.metadata,
                 tags=tags,
                 categories=categories,
@@ -699,69 +708,6 @@ class Graph[NodeValueT, EdgeValueT]:
                 match_all=match_all,
             )
         )
-
-    @staticmethod
-    def _matches_metadata(
-        metadata: Metadata,
-        *,
-        tags: Iterable[str] | None = None,
-        categories: Iterable[str] | None = None,
-        layers: Iterable[str] | None = None,
-        flags: Iterable[str] | None = None,
-        match_all: bool = True,
-    ) -> bool:
-        """Return whether metadata matches the provided criteria.
-
-        Args:
-            metadata: Metadata to inspect.
-            tags: Optional tags to match.
-            categories: Optional categories to match.
-            layers: Optional layers to match.
-            flags: Optional flags to match.
-            match_all: If True, all expected values must be present within each
-                provided criterion. If False, at least one expected value must be
-                present within each provided criterion. Different criteria are
-                always combined with AND.
-
-        Returns:
-            True if the metadata matches all provided criteria, False otherwise.
-        """
-        return (
-            Graph._matches_values(metadata.tags, tags, match_all)
-            and Graph._matches_values(metadata.categories, categories, match_all)
-            and Graph._matches_values(metadata.layers, layers, match_all)
-            and Graph._matches_values(metadata.flags, flags, match_all)
-        )
-
-    @staticmethod
-    def _matches_values(
-        existing_values: set[str],
-        expected_values: Iterable[str] | None,
-        match_all: bool,
-    ) -> bool:
-        """Return whether a set contains expected values.
-
-        Args:
-            existing_values: Existing metadata values.
-            expected_values: Expected metadata values.
-            match_all: If True, all expected values must be present. If False,
-                at least one expected value must be present.
-
-        Returns:
-            True if the values match, False otherwise.
-        """
-        if expected_values is None:
-            return True
-
-        expected_values_set = set(expected_values)
-
-        if not expected_values_set:
-            return True
-
-        if match_all:
-            return expected_values_set.issubset(existing_values)
-
-        return bool(existing_values.intersection(expected_values_set))
 
     def _register_edge_in_adjacency_indexes(
         self,
@@ -846,3 +792,30 @@ class Graph[NodeValueT, EdgeValueT]:
                 )
 
         return subgraph
+
+    @staticmethod
+    def _get_opposite_node(
+        edge: Edge[NodeValueT, EdgeValueT],
+        node_id: str,
+    ) -> Node[NodeValueT]:
+        """Return the node located at the opposite endpoint of an edge.
+
+        Args:
+            edge: Edge to inspect.
+            node_id: Identifier of one endpoint.
+
+        Raises:
+            GraphException: If the node is not connected to the edge.
+
+        Returns:
+            The opposite endpoint node.
+        """
+        if edge.node_start.node_id == node_id:
+            return edge.node_end
+
+        if edge.node_end.node_id == node_id:
+            return edge.node_start
+
+        raise GraphException(
+            f"The node '{node_id}' is not connected to the edge '{edge.edge_id}'."
+        )

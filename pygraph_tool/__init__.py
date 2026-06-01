@@ -8,6 +8,7 @@ from .graph_exceptions import (
 )
 from .metadata import Metadata
 from .node import Node
+from .query import EdgeQuery, GraphQuery, NodeQuery, NodeTraversalQuery
 
 __all__ = [
     "Edge",
@@ -18,4 +19,8 @@ __all__ = [
     "GraphException",
     "NodeException",
     "PyGraphToolException",
+    "GraphQuery",
+    "NodeQuery",
+    "EdgeQuery",
+    "NodeTraversalQuery",
 ]

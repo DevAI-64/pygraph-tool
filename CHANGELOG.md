@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-06-01
+
+### Added
+
+- Added `Graph.query()` as the entry point for fluent graph queries.
+- Added `GraphQuery` to query graph nodes, edges, and traversals.
+- Added `NodeQuery` with predicate filtering, metadata filtering, limits,
+  result helpers, and subgraph extraction.
+- Added `EdgeQuery` with predicate filtering, metadata filtering, limits,
+  and result helpers.
+- Added `NodeTraversalQuery` for neighbor, traversal, shortest path, and
+  connected edge queries.
+
+### Tests
+
+- Added tests for fluent graph queries.
+- Added tests for node and edge query filtering.
+- Added tests for traversal query helpers.
+- Added tests for query result helpers.
+
 ## [1.1.0] - 2026-05-31
 
 ### Added
