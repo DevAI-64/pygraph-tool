@@ -1,14 +1,16 @@
-from .edge import Edge
-from .graph import Graph
-from .graph_exceptions import (
+"""pygraph-tool: a lightweight, object-oriented in-memory graph toolkit."""
+
+from .core.edge import Edge
+from .core.graph import Graph
+from .core.metadata import Metadata
+from .core.node import Node
+from .exceptions.graph_exceptions import (
     EdgeException,
     GraphException,
     NodeException,
     PyGraphToolException,
+    SerializationException,
 )
-from .metadata import Metadata
-from .node import Node
-from .query import EdgeQuery, GraphQuery, NodeQuery, NodeTraversalQuery
 
 __all__ = [
     "Edge",
@@ -19,8 +21,5 @@ __all__ = [
     "GraphException",
     "NodeException",
     "PyGraphToolException",
-    "GraphQuery",
-    "NodeQuery",
-    "EdgeQuery",
-    "NodeTraversalQuery",
+    "SerializationException",
 ]

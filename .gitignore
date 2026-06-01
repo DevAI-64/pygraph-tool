@@ -14,9 +14,13 @@ dist/
 wheels/
 
 # Virtual environments
+.venv-py*/
 .venv/
 .tox/
 
 # IDE
 .vscode/
 .idea/
+
+# Local assistant/tool settings
+.claude/

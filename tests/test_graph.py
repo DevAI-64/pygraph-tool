@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 
 from pygraph_tool import Edge, Graph, GraphException, Metadata, Node, NodeException
-from pygraph_tool.graph_exceptions import EdgeException
+from pygraph_tool.exceptions.graph_exceptions import EdgeException
 
 
 def _node_ids(nodes: list[Node[Any]]) -> list[str]:
@@ -384,3 +384,30 @@ def test_get_opposite_node_raises_when_node_is_not_connected_to_edge() -> None:
 
     with pytest.raises(GraphException):
         graph._get_opposite_node(edge, "missing")
+
+
+def test_edge_weight_rejects_non_finite_value_after_creation() -> None:
+    graph: Graph[str, str] = Graph()
+    graph.add_node("A", node_id="a")
+    graph.add_node("B", node_id="b")
+
+    edge = graph.add_edge("a", "b")
+
+    with pytest.raises(EdgeException):
+        edge.weight = float("nan")
+
+
+def test_public_library_is_intentionally_limited() -> None:
+    import pygraph_tool
+
+    assert set(pygraph_tool.__all__) == {
+        "Edge",
+        "Graph",
+        "Metadata",
+        "Node",
+        "EdgeException",
+        "GraphException",
+        "NodeException",
+        "PyGraphToolException",
+        "SerializationException",
+    }

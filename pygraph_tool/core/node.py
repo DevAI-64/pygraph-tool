@@ -3,7 +3,8 @@
 from dataclasses import dataclass, field
 from uuid import uuid4
 
-from .graph_exceptions import NodeException
+from pygraph_tool.exceptions.graph_exceptions import NodeException
+
 from .metadata import Metadata
 
 

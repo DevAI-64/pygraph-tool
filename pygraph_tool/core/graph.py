@@ -4,17 +4,19 @@ from __future__ import annotations
 
 from collections import deque
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING
+from os import PathLike
+from pathlib import Path
+from typing import Any
 
-from ._metadata_matching import matches_metadata
-from ._types import Direction
+from pygraph_tool._types import Direction
+from pygraph_tool.exceptions.graph_exceptions import GraphException
+from pygraph_tool.queries._graph_query import GraphQuery
+from pygraph_tool.serialization._graph_deserializer import GraphDeserializer
+from pygraph_tool.serialization._graph_serializer import GraphSerializer
+
 from .edge import Edge
-from .graph_exceptions import GraphException
 from .metadata import Metadata
 from .node import Node
-
-if TYPE_CHECKING:
-    from .query import GraphQuery
 
 
 class Graph[NodeValueT, EdgeValueT]:
@@ -55,8 +57,6 @@ class Graph[NodeValueT, EdgeValueT]:
         Returns:
             A fluent query entry point bound to this graph.
         """
-        from .query import GraphQuery
-
         return GraphQuery(self)
 
     def is_node(self, node_id: str) -> bool:
@@ -103,7 +103,7 @@ class Graph[NodeValueT, EdgeValueT]:
         Returns:
             The created node.
         """
-        node = Node(value=value, node_id=node_id, metadata=metadata)
+        node: Node[NodeValueT] = Node(value=value, node_id=node_id, metadata=metadata)
 
         if self.is_node(node.node_id):
             raise GraphException(f"The node '{node.node_id}' already exists.")
@@ -146,10 +146,10 @@ class Graph[NodeValueT, EdgeValueT]:
         Returns:
             The created edge.
         """
-        node_start = self.get_node(node_id_start)
-        node_end = self.get_node(node_id_end)
+        node_start: Node[NodeValueT] = self.get_node(node_id_start)
+        node_end: Node[NodeValueT] = self.get_node(node_id_end)
 
-        edge = Edge(
+        edge: Edge[NodeValueT, EdgeValueT] = Edge(
             node_start=node_start,
             node_end=node_end,
             value=value,
@@ -282,7 +282,7 @@ class Graph[NodeValueT, EdgeValueT]:
         Returns:
             The removed edge.
         """
-        edge = self.get_edge(edge_id)
+        edge: Edge[NodeValueT, EdgeValueT] = self.get_edge(edge_id)
         self._unregister_edge_from_adjacency_indexes(edge)
         del self._edges_by_id[edge_id]
         return edge
@@ -299,9 +299,11 @@ class Graph[NodeValueT, EdgeValueT]:
         Returns:
             The removed node.
         """
-        node = self.get_node(node_id)
+        node: Node[NodeValueT] = self.get_node(node_id)
 
-        edge_ids_to_remove = [edge.edge_id for edge in self.get_incident_edges(node_id)]
+        edge_ids_to_remove: list[str] = [
+            edge.edge_id for edge in self.get_incident_edges(node_id)
+        ]
 
         for edge_id in edge_ids_to_remove:
             self.remove_edge(edge_id)
@@ -382,7 +384,7 @@ class Graph[NodeValueT, EdgeValueT]:
         """
         self.get_node(node_id)
 
-        edge_ids = {
+        edge_ids: dict[str, None] = {
             **self._outgoing_edge_ids_by_node_id[node_id],
             **self._incoming_edge_ids_by_node_id[node_id],
         }
@@ -409,7 +411,7 @@ class Graph[NodeValueT, EdgeValueT]:
         predecessors_by_id: dict[str, Node[NodeValueT]] = {}
 
         for edge in self.get_incoming_edges(node_id):
-            predecessor = self._get_opposite_node(edge, node_id)
+            predecessor: Node[NodeValueT] = self._get_opposite_node(edge, node_id)
             predecessors_by_id[predecessor.node_id] = predecessor
 
         return list(predecessors_by_id.values())
@@ -434,7 +436,7 @@ class Graph[NodeValueT, EdgeValueT]:
         successors_by_id: dict[str, Node[NodeValueT]] = {}
 
         for edge in self.get_outgoing_edges(node_id):
-            successor = self._get_opposite_node(edge, node_id)
+            successor: Node[NodeValueT] = self._get_opposite_node(edge, node_id)
             successors_by_id[successor.node_id] = successor
 
         return list(successors_by_id.values())
@@ -509,9 +511,9 @@ class Graph[NodeValueT, EdgeValueT]:
         if max_depth < 0:
             raise GraphException("max_depth must be greater than or equal to 0.")
 
-        start_node = self.get_node(node_id)
+        start_node: Node[NodeValueT] = self.get_node(node_id)
 
-        visited_node_ids = {node_id}
+        visited_node_ids: set[str] = {node_id}
         reachable_nodes: list[Node[NodeValueT]] = []
 
         if include_start:
@@ -566,7 +568,7 @@ class Graph[NodeValueT, EdgeValueT]:
         if node_id_start == node_id_end:
             return [self.get_node(node_id_start)]
 
-        visited_node_ids = {node_id_start}
+        visited_node_ids: set[str] = {node_id_start}
         previous_node_id_by_node_id: dict[str, str | None] = {
             node_id_start: None,
         }
@@ -574,7 +576,7 @@ class Graph[NodeValueT, EdgeValueT]:
         queue: deque[str] = deque([node_id_start])
 
         while queue:
-            current_node_id = queue.popleft()
+            current_node_id: str = queue.popleft()
 
             for neighbor in self.get_neighbors(
                 current_node_id,
@@ -665,8 +667,7 @@ class Graph[NodeValueT, EdgeValueT]:
             List of nodes matching the metadata criteria.
         """
         return self.filter_nodes(
-            lambda node: matches_metadata(
-                metadata=node.metadata,
+            lambda node: node.metadata.matches(
                 tags=tags,
                 categories=categories,
                 layers=layers,
@@ -699,8 +700,7 @@ class Graph[NodeValueT, EdgeValueT]:
             List of edges matching the metadata criteria.
         """
         return self.filter_edges(
-            lambda edge: matches_metadata(
-                metadata=edge.metadata,
+            lambda edge: edge.metadata.matches(
                 tags=tags,
                 categories=categories,
                 layers=layers,
@@ -714,8 +714,8 @@ class Graph[NodeValueT, EdgeValueT]:
         edge: Edge[NodeValueT, EdgeValueT],
     ) -> None:
         """Register an edge in adjacency indexes."""
-        start_id = edge.node_start.node_id
-        end_id = edge.node_end.node_id
+        start_id: str = edge.node_start.node_id
+        end_id: str = edge.node_end.node_id
 
         self._outgoing_edge_ids_by_node_id[start_id][edge.edge_id] = None
         self._incoming_edge_ids_by_node_id[end_id][edge.edge_id] = None
@@ -729,8 +729,8 @@ class Graph[NodeValueT, EdgeValueT]:
         edge: Edge[NodeValueT, EdgeValueT],
     ) -> None:
         """Unregister an edge from adjacency indexes."""
-        start_id = edge.node_start.node_id
-        end_id = edge.node_end.node_id
+        start_id: str = edge.node_start.node_id
+        end_id: str = edge.node_end.node_id
 
         self._outgoing_edge_ids_by_node_id[start_id].pop(edge.edge_id, None)
         self._incoming_edge_ids_by_node_id[end_id].pop(edge.edge_id, None)
@@ -760,13 +760,13 @@ class Graph[NodeValueT, EdgeValueT]:
         Returns:
             A new graph containing the selected nodes and optional internal edges.
         """
-        selected_node_ids = tuple(dict.fromkeys(node_ids))
-        selected_node_id_set = set(selected_node_ids)
+        selected_node_ids: tuple[str, ...] = tuple(dict.fromkeys(node_ids))
+        selected_node_id_set: set[str] = set(selected_node_ids)
 
         subgraph: Graph[NodeValueT, EdgeValueT] = Graph()
 
         for node_id in selected_node_ids:
-            node = self.get_node(node_id)
+            node: Node[NodeValueT] = self.get_node(node_id)
             subgraph.add_node(
                 value=node.value,
                 node_id=node.node_id,
@@ -777,8 +777,8 @@ class Graph[NodeValueT, EdgeValueT]:
             return subgraph
 
         for edge in self.edges:
-            start_id = edge.node_start.node_id
-            end_id = edge.node_end.node_id
+            start_id: str = edge.node_start.node_id
+            end_id: str = edge.node_end.node_id
 
             if start_id in selected_node_id_set and end_id in selected_node_id_set:
                 subgraph.add_edge(
@@ -792,6 +792,194 @@ class Graph[NodeValueT, EdgeValueT]:
                 )
 
         return subgraph
+
+    def to_dict(
+        self,
+        *,
+        serialize_node_value: Callable[[NodeValueT], Any] | None = None,
+        serialize_edge_value: Callable[[EdgeValueT | None], Any] | None = None,
+    ) -> dict[str, Any]:
+        """Convert the graph to a JSON-compatible dictionary.
+
+        The returned structure uses only standard Python containers. Node and
+        edge values are included as-is unless a serialization hook converts
+        them. Metadata sets are exported as sorted lists.
+
+        Args:
+            serialize_node_value: Optional callable converting a node value into
+                a JSON-compatible object.
+            serialize_edge_value: Optional callable converting an edge value into
+                a JSON-compatible object.
+
+        Returns:
+            A dictionary describing the graph.
+        """
+        serializer = GraphSerializer(
+            serialize_node_value=serialize_node_value,
+            serialize_edge_value=serialize_edge_value,
+        )
+        return serializer.to_dict(self)
+
+    def to_json(
+        self,
+        *,
+        indent: int | None = None,
+        sort_keys: bool = False,
+        serialize_node_value: Callable[[NodeValueT], Any] | None = None,
+        serialize_edge_value: Callable[[EdgeValueT | None], Any] | None = None,
+    ) -> str:
+        """Serialize the graph to a JSON string.
+
+        Args:
+            indent: Optional indentation passed to the JSON encoder.
+            sort_keys: Whether to sort dictionary keys in the JSON output.
+            serialize_node_value: Optional callable converting a node value into
+                a JSON-compatible object.
+            serialize_edge_value: Optional callable converting an edge value into
+                a JSON-compatible object.
+
+        Raises:
+            SerializationException: If a value is not JSON-serializable and no
+                matching hook converts it.
+
+        Returns:
+            The JSON representation of the graph.
+        """
+        serializer = GraphSerializer(
+            serialize_node_value=serialize_node_value,
+            serialize_edge_value=serialize_edge_value,
+        )
+        return serializer.to_json(self, indent=indent, sort_keys=sort_keys)
+
+    def save_json(
+        self,
+        path: str | PathLike[str],
+        *,
+        indent: int | None = 2,
+        sort_keys: bool = False,
+        serialize_node_value: Callable[[NodeValueT], Any] | None = None,
+        serialize_edge_value: Callable[[EdgeValueT | None], Any] | None = None,
+    ) -> None:
+        """Write the graph to a JSON file encoded in UTF-8.
+
+        Args:
+            path: Destination file path.
+            indent: Optional indentation passed to the JSON encoder. Defaults to
+                2 to produce a human-readable file.
+            sort_keys: Whether to sort dictionary keys in the JSON output.
+            serialize_node_value: Optional callable converting a node value into
+                a JSON-compatible object.
+            serialize_edge_value: Optional callable converting an edge value into
+                a JSON-compatible object.
+
+        Raises:
+            SerializationException: If a value is not JSON-serializable and no
+                matching hook converts it.
+        """
+        text: str = self.to_json(
+            indent=indent,
+            sort_keys=sort_keys,
+            serialize_node_value=serialize_node_value,
+            serialize_edge_value=serialize_edge_value,
+        )
+        Path(path).write_text(text, encoding="utf-8")
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        *,
+        deserialize_node_value: Callable[[Any], Any] | None = None,
+        deserialize_edge_value: Callable[[Any], Any] | None = None,
+    ) -> Graph[Any, Any]:
+        """Build a graph from a dictionary produced by to_dict.
+
+        Node and edge identifiers, weights, directions, and metadata are
+        restored. The returned graph is parameterized as ``Graph[Any, Any]``
+        because value types cannot be inferred from serialized data.
+
+        Args:
+            data: Dictionary describing the graph.
+            deserialize_node_value: Optional callable converting a stored node
+                value back into its in-memory form.
+            deserialize_edge_value: Optional callable converting a stored edge
+                value back into its in-memory form.
+
+        Raises:
+            SerializationException: If the data is malformed or inconsistent.
+
+        Returns:
+            A new graph built from the data.
+        """
+        graph: Graph[Any, Any] = cls()
+        deserializer = GraphDeserializer(
+            deserialize_node_value=deserialize_node_value,
+            deserialize_edge_value=deserialize_edge_value,
+        )
+        deserializer.populate_graph(graph, data)
+        return graph
+
+    @classmethod
+    def from_json(
+        cls,
+        text: str,
+        *,
+        deserialize_node_value: Callable[[Any], Any] | None = None,
+        deserialize_edge_value: Callable[[Any], Any] | None = None,
+    ) -> Graph[Any, Any]:
+        """Build a graph from a JSON string produced by to_json.
+
+        Args:
+            text: JSON text describing the graph.
+            deserialize_node_value: Optional callable converting a stored node
+                value back into its in-memory form.
+            deserialize_edge_value: Optional callable converting a stored edge
+                value back into its in-memory form.
+
+        Raises:
+            SerializationException: If the JSON is invalid, malformed, or
+                inconsistent.
+
+        Returns:
+            A new graph built from the JSON text.
+        """
+        data: Any = GraphDeserializer.parse_json(text)
+        return cls.from_dict(
+            data,
+            deserialize_node_value=deserialize_node_value,
+            deserialize_edge_value=deserialize_edge_value,
+        )
+
+    @classmethod
+    def load_json(
+        cls,
+        path: str | PathLike[str],
+        *,
+        deserialize_node_value: Callable[[Any], Any] | None = None,
+        deserialize_edge_value: Callable[[Any], Any] | None = None,
+    ) -> Graph[Any, Any]:
+        """Build a graph from a UTF-8 encoded JSON file.
+
+        Args:
+            path: Source file path.
+            deserialize_node_value: Optional callable converting a stored node
+                value back into its in-memory form.
+            deserialize_edge_value: Optional callable converting a stored edge
+                value back into its in-memory form.
+
+        Raises:
+            SerializationException: If the JSON is invalid, malformed, or
+                inconsistent.
+
+        Returns:
+            A new graph built from the file content.
+        """
+        text: str = Path(path).read_text(encoding="utf-8")
+        return cls.from_json(
+            text,
+            deserialize_node_value=deserialize_node_value,
+            deserialize_edge_value=deserialize_edge_value,
+        )
 
     @staticmethod
     def _get_opposite_node(

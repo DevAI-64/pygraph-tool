@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-06-01
+
+### Added
+
+- Added `Graph.to_dict()` to convert a graph into a standard Python dictionary.
+- Added `Graph.from_dict()` to rebuild a graph from a dictionary.
+- Added `Graph.to_json()` and `Graph.from_json()` for JSON serialization and
+  deserialization.
+- Added `Graph.save_json()` and `Graph.load_json()` to export and import a graph
+  to and from a UTF-8 encoded JSON file.
+- Added optional `serialize_node_value`, `serialize_edge_value`,
+  `deserialize_node_value`, and `deserialize_edge_value` hooks to support values
+  that are not natively JSON-compatible.
+- Added a `schema_version` field to the serialized format to allow future format
+  evolution.
+- Added `SerializationException` for serialization and deserialization errors.
+- Added `Metadata.matches()` to test metadata against tag, category, layer, and
+  flag criteria.
+
+### Changed
+
+- Reorganized the package into `core`, `exceptions`, `queries`, and
+  `serialization` subpackages.
+- Limited the public classes to `Graph`, `Node`, `Edge`, `Metadata`, and the
+  exception types. The fluent query classes (`GraphQuery`, `NodeQuery`,
+  `EdgeQuery`, `NodeTraversalQuery`) are no longer exported from the top-level
+  package and are now internal. The fluent query helpers remain available
+  through `Graph.query()`.
+
+### Tests
+
+- Added round-trip tests for dictionaries, JSON strings, and JSON files.
+- Added tests for metadata, weights, directions, and identifier preservation.
+- Added tests for serialization value hooks.
+- Added tests for malformed and inconsistent serialized data.
+
 ## [1.2.0] - 2026-06-01
 
 ### Added
@@ -39,7 +75,7 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 - Updated graph edge lookup internals to rely on adjacency indexes.
 - Improved traversal performance for graph navigation methods.
-- Preserved existing public API behavior while improving internal storage.
+- Preserved existing public behavior while improving internal storage.
 
 ### Fixed
 
@@ -107,13 +143,13 @@ This project follows [Semantic Versioning](https://semver.org/).
 * Updated successors and predecessors traversal to correctly handle bidirectional edges.
 * Updated traversal methods to remove duplicate returned nodes or edges.
 * Updated the package configuration to use `uv` and a modern `pyproject.toml` workflow.
-* Updated the README to reflect the new public API.
+* Updated the README to reflect the new public classes.
 
 ### Removed
 
 * Removed mutable public setters for graph node and edge collections.
 * Removed the previous placeholder behavior for bidirectional edges.
-* Removed the old `node_content` API in favor of the generic `value` attribute.
+* Removed the old `node_content` attribute in favor of the generic `value` attribute.
 
 ### Fixed
 
@@ -126,4 +162,4 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 * Added an expanded test suite covering nodes, edges, metadata, graph operations, traversal, filtering, and duplicate handling.
 * Added type-checking-oriented tests and annotations for generic graph components.
-* Added coverage-oriented tests for the public API.
+* Added coverage-oriented tests for the public classes.

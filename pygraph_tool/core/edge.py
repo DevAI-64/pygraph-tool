@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from math import isfinite
 from uuid import uuid4
 
-from .graph_exceptions import EdgeException
+from pygraph_tool.exceptions.graph_exceptions import EdgeException
+
 from .metadata import Metadata
 from .node import Node
 
@@ -30,9 +31,9 @@ class Edge[NodeValueT, EdgeValueT]:
     _node_start: Node[NodeValueT] = field(init=False, repr=False)
     _node_end: Node[NodeValueT] = field(init=False, repr=False)
     _bidirectional: bool = field(init=False, repr=False)
+    _weight: float = field(init=False, repr=False)
 
     value: EdgeValueT | None
-    weight: float
     metadata: Metadata
 
     def __init__(
@@ -92,6 +93,22 @@ class Edge[NodeValueT, EdgeValueT]:
     def node_end(self) -> Node[NodeValueT]:
         """Return the node where the edge ends."""
         return self._node_end
+
+    @property
+    def weight(self) -> float:
+        """Return the edge weight."""
+        return self._weight
+
+    @weight.setter
+    def weight(self, value: float) -> None:
+        """Set the edge weight.
+
+        Raises:
+            EdgeException: If the weight is not finite.
+        """
+        if not isfinite(value):
+            raise EdgeException("The edge weight must be finite.")
+        self._weight = value
 
     @property
     def bidirectional(self) -> bool:
